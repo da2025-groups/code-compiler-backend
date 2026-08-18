@@ -102,7 +102,7 @@ POST  /playground/run       Run code with custom stdin — stateless, no score
 
 ### Questions
 ```
-GET    /questions           List all published questions
+GET    /questions           List published questions — includes is_solved flag per authenticated student
 GET    /questions/:id       Question detail + sample I/O
 POST   /questions           [Admin] Create question with test cases
 PUT    /questions/:id       [Admin] Edit question
@@ -111,10 +111,11 @@ DELETE /questions/:id       [Admin] Delete question
 
 ### Submissions
 ```
-POST  /submissions/run      Run against sample input (no score saved)
-POST  /submissions/submit   Judge against all test cases (score saved)
-GET   /submissions/my       Student's own submission history
-GET   /admin/submissions    [Admin] All submissions across all users
+POST  /submissions/run                        Run against sample input (no score saved)
+POST  /submissions/submit                     Judge against all test cases (score saved)
+GET   /submissions/my                         Student's own full submission history
+GET   /submissions/my?question_id=:id         Student's submissions for a specific question
+GET   /admin/submissions                      [Admin] All submissions across all users
 ```
 
 ### Rankings
@@ -181,6 +182,7 @@ GET  /rankings/:question_id     Per-question leaderboard
 | `/leaderboard` | Both | Global rankings table |
 | `/admin/questions` | Admin | Manage all questions (list, edit, delete) |
 | `/admin/questions/new` | Admin | Create question form with test case editor |
+| `/admin/questions/:id/edit` | Admin | Edit existing question and test cases |
 | `/admin/submissions` | Admin | All submissions across all students |
 
 ---
@@ -302,16 +304,8 @@ code-compiler-frontend/
 │   ├── assets/                        # Static assets (images, icons, fonts)
 │   │
 │   ├── components/                    # REUSABLE COMPONENTS (shared across features)
-│   │   ├── ui/                        # Primitive UI building blocks
-│   │   │   ├── Button.jsx
-│   │   │   ├── Input.jsx
-│   │   │   ├── Badge.jsx              # Difficulty badge (Easy/Medium/Hard)
-│   │   │   ├── Modal.jsx
-│   │   │   ├── Spinner.jsx
-│   │   │   ├── Toast.jsx
-│   │   │   ├── Table.jsx
-│   │   │   ├── Tabs.jsx
-│   │   │   └── Select.jsx
+│   │   │                              # NOTE: No ui/ folder — use MUI primitives directly
+│   │   │                              # (Button, Input, Chip, Modal, Tabs, etc. all from MUI)
 │   │   │
 │   │   ├── layout/                    # App-wide layout components
 │   │   │   ├── Navbar.jsx             # Top nav with role-aware links
@@ -403,6 +397,7 @@ code-compiler-frontend/
 │   │   └── admin/
 │   │       ├── AdminQuestionsPage.jsx
 │   │       ├── AdminQuestionNewPage.jsx
+│   │       ├── AdminQuestionEditPage.jsx   # Reuses QuestionForm with prefilled data
 │   │       └── AdminSubmissionsPage.jsx
 │   │
 │   ├── store/                             # GLOBAL STATE (Zustand)
@@ -490,7 +485,75 @@ PlaygroundPage
 
 ---
 
-## 14. Non-functional Requirements
+## 14. Backend Folder Structure
+
+```
+code-compiler-backend/
+├── app/
+│   ├── main.py                  # FastAPI app init, CORS middleware, router registration
+│   ├── database.py              # SQLAlchemy engine, session, Base
+│   ├── seed.py                  # Admin account seeding on startup
+│   │
+│   ├── models/                  # SQLAlchemy ORM models
+│   │   ├── user.py              # User model
+│   │   ├── question.py          # Question model
+│   │   └── submission.py        # Submission model
+│   │
+│   ├── schemas/                 # Pydantic request/response schemas
+│   │   ├── auth.py              # RegisterRequest, LoginRequest, TokenResponse
+│   │   ├── question.py          # QuestionCreate, QuestionUpdate, QuestionResponse
+│   │   ├── submission.py        # RunRequest, SubmitRequest, SubmissionResponse
+│   │   └── ranking.py           # RankingResponse
+│   │
+│   ├── routers/                 # Route handlers (one file per domain)
+│   │   ├── auth.py              # POST /auth/register, /auth/login
+│   │   ├── playground.py        # POST /playground/run
+│   │   ├── questions.py         # GET/POST/PUT/DELETE /questions
+│   │   ├── submissions.py       # POST /submissions/run, /submit, GET /submissions/my
+│   │   ├── rankings.py          # GET /rankings, /rankings/:question_id
+│   │   └── admin.py             # GET /admin/submissions
+│   │
+│   ├── services/                # Business logic (decoupled from HTTP layer)
+│   │   ├── auth_service.py      # password hashing, JWT create/verify
+│   │   ├── piston_service.py    # Piston API calls, execution wrapper
+│   │   ├── judge_service.py     # Test case evaluation logic
+│   │   └── ranking_service.py   # Leaderboard computation
+│   │
+│   └── dependencies.py          # get_db, get_current_user, require_admin
+│
+├── docker-compose.yml           # Piston engine + backend service
+├── requirements.txt
+└── .env                         # SECRET_KEY, ADMIN_EMAIL, ADMIN_PASSWORD, PISTON_URL
+```
+
+### CORS Configuration
+```python
+# app/main.py
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Vite dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+
+### Admin Account Seeding
+- Admin credentials stored in `.env` as `ADMIN_EMAIL` and `ADMIN_PASSWORD`
+- `seed.py` runs once on app startup — checks if admin exists, creates if not
+- Prevents duplicate seeding on restart
+
+```python
+# .env
+ADMIN_EMAIL=admin@platform.com
+ADMIN_PASSWORD=admin123
+SECRET_KEY=your-secret-key
+PISTON_URL=http://localhost:2000
+```
+
+---
+
+## 15. Non-functional Requirements
 - Code execution isolated per submission (no cross-contamination)
 - Execution timeout: 5 seconds
 - Memory limit: 64MB per execution
