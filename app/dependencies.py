@@ -42,3 +42,23 @@ def require_admin(current_user=Depends(get_current_user)):
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     return current_user
+
+
+def get_optional_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    db: Session = Depends(get_db),
+):
+    """Like get_current_user but returns None instead of 401 when unauthenticated."""
+    if credentials is None:
+        return None
+    from jose import JWTError
+    from app.services.auth_service import decode_token
+    from app.models.user import User
+    try:
+        payload = decode_token(credentials.credentials)
+        user_id: str | None = payload.get("sub")
+        if user_id is None:
+            return None
+    except JWTError:
+        return None
+    return db.get(User, int(user_id))
