@@ -143,3 +143,51 @@ def test_admin_routes_reject_unauthenticated_with_401(client):
     """No token is rejected with 401 on admin routes."""
     resp = client.get("/admin/questions")
     assert resp.status_code == 401
+
+
+# ── DELETE /admin/questions/:id ───────────────────────────────────────────────
+
+def test_admin_delete_question_returns_200(client):
+    """Admin can delete a question and gets {"message": "deleted"}."""
+    token = _admin_token(client)
+    create_resp = client.post("/admin/questions", json=_Q_BODY,
+                              headers={"Authorization": f"Bearer {token}"})
+    assert create_resp.status_code == 201
+    q_id = create_resp.json()["id"]
+
+    resp = client.delete(f"/admin/questions/{q_id}",
+                         headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 200
+    assert resp.json() == {"message": "deleted"}
+
+
+def test_admin_delete_question_is_gone_after_delete(client):
+    """Deleted question no longer appears in admin list."""
+    token = _admin_token(client)
+    create_resp = client.post("/admin/questions", json=_Q_BODY,
+                              headers={"Authorization": f"Bearer {token}"})
+    q_id = create_resp.json()["id"]
+    client.delete(f"/admin/questions/{q_id}",
+                  headers={"Authorization": f"Bearer {token}"})
+
+    list_resp = client.get("/admin/questions",
+                           headers={"Authorization": f"Bearer {token}"})
+    ids = [q["id"] for q in list_resp.json()]
+    assert q_id not in ids
+
+
+def test_admin_delete_question_returns_404_for_unknown(client):
+    """DELETE /admin/questions/999 returns 404 when question does not exist."""
+    token = _admin_token(client)
+    resp = client.delete("/admin/questions/999",
+                         headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 404
+    assert resp.json()["detail"] == "Question not found"
+
+
+def test_admin_delete_question_rejects_student_with_403(client):
+    """Student JWT is rejected with 403 on DELETE admin route."""
+    token = _student_token(client)
+    resp = client.delete("/admin/questions/1",
+                         headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 403

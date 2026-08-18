@@ -85,7 +85,7 @@ Both modes share the same Piston execution engine.
 | HTTP client | httpx (async) |
 | Config | pydantic-settings (reads `.env`) |
 | Container | Docker Compose |
-| Tests | pytest (94 tests) |
+| Tests | pytest (98 tests) |
 
 ---
 
@@ -420,6 +420,15 @@ Create a new question with hidden test cases.
 #### `PUT /admin/questions/{question_id}`
 Full update (replace) of an existing question.
 
+#### `DELETE /admin/questions/{question_id}`
+Permanently delete a question and all its associated submissions.
+
+**Response `200`**
+```json
+{ "message": "deleted" }
+```
+Returns `404` if the question does not exist.
+
 #### `GET /admin/submissions`
 List all submissions across all students.
 
@@ -513,16 +522,16 @@ code-compiler-backend/
 │   │   ├── questions.py     # GET /questions, GET /questions/{id}
 │   │   ├── submissions.py   # POST /submissions/run, /submit — GET /submissions/my
 │   │   ├── rankings.py      # GET /rankings, /rankings/{id}
-│   │   └── admin.py         # GET/POST/PUT /admin/questions — GET /admin/submissions
+│   │   └── admin.py         # GET/POST/PUT/DELETE /admin/questions — GET /admin/submissions
 │   │
 │   └── services/            # Business logic, decoupled from HTTP
 │       ├── auth_service.py  # hash_password, verify_password, create_token, decode_token
 │       ├── piston_service.py# execute_code, run_code, language aliases, per-language timeouts
-│       ├── question_service.py  # list/get/create/update questions
+│       ├── question_service.py  # list/get/create/update/delete questions
 │       ├── judge_service.py     # run_against_sample, judge_submission, get_my_submissions
 │       └── ranking_service.py   # get_global_rankings, get_question_rankings
 │
-├── tests/                   # 94 pytest tests
+├── tests/                   # 98 pytest tests
 │   ├── test_auth.py
 │   ├── test_dependencies.py
 │   ├── test_playground.py

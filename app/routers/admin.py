@@ -40,6 +40,19 @@ def admin_update_question(
     return result
 
 
+@router.delete("/questions/{question_id}", status_code=200)
+def admin_delete_question(
+    question_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_admin),
+):
+    """Delete a question. Returns 404 if not found."""
+    deleted = question_service.delete_question(db, question_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Question not found")
+    return {"message": "deleted"}
+
+
 @router.get("/submissions")
 def admin_submissions(
     db: Session = Depends(get_db),

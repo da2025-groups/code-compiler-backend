@@ -102,6 +102,16 @@ def update_question(db: Session, question_id: int, req: QuestionUpdate) -> dict 
     }
 
 
+def delete_question(db: Session, question_id: int) -> bool:
+    """Delete a question by id. Returns False if not found."""
+    q = db.get(Question, question_id)
+    if q is None:
+        return False
+    db.delete(q)
+    db.commit()
+    return True
+
+
 def list_all_questions(db: Session) -> list[dict]:
     questions = db.query(Question).order_by(Question.id).all()
     return [
