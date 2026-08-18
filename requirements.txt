@@ -5,6 +5,7 @@ python-jose[cryptography]
 passlib[bcrypt]
 httpx
 pydantic-settings
+pydantic[email]
 python-multipart
 pytest
 pytest-asyncio
