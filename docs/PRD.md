@@ -48,7 +48,7 @@ A standalone code editor with no relation to questions, scoring, or leaderboard.
 - Custom stdin input field
 - Run code → see stdout, stderr, and execution time
 - Stateless — nothing saved to database
-- Available to all logged-in students
+- Available to all logged-in users (both students and admins)
 
 ### 4.3 Question Management (Admin)
 - Create question with: title, description, difficulty (Easy / Medium / Hard), constraints, sample input/output
@@ -103,11 +103,12 @@ POST  /playground/run       Run code with custom stdin — stateless, no score
 
 ### Questions
 ```
-GET    /questions           List published questions — includes is_solved flag per authenticated student
-GET    /questions/:id       Question detail + sample I/O
-POST   /questions           [Admin] Create question with test cases
-PUT    /questions/:id       [Admin] Edit question
-DELETE /questions/:id       [Admin] Delete question
+GET    /questions                List published questions — includes is_solved flag per authenticated student
+GET    /questions/:id            Question detail + sample I/O
+POST   /questions                [Admin] Create question with test cases
+PUT    /questions/:id            [Admin] Edit question
+DELETE /questions/:id            [Admin] Delete question
+GET    /admin/questions          [Admin] List ALL questions including unpublished drafts
 ```
 
 ### Submissions
@@ -227,8 +228,8 @@ Both modes share the same Piston execution engine and Monaco editor component.
 │   ┌──────────────────┐       ┌────────────────────────┐  │
 │   │  Admin Dashboard  │       │     Student Portal     │  │
 │   │  - Add questions  │       │  - Playground          │  │
-│   │  - View all subs  │       │  - Question list       │  │
-│   │  - Manage users   │       │  - Code editor         │  │
+│   │  - Edit questions │       │  - Question list       │  │
+│   │  - View all subs  │       │  - Code editor         │  │
 │   └──────────────────┘       │  - Run / Submit        │  │
 │                               │  - Leaderboard         │  │
 │                               └────────────────────────┘  │
@@ -516,7 +517,7 @@ code-compiler-backend/
 │   │   ├── questions.py         # GET/POST/PUT/DELETE /questions
 │   │   ├── submissions.py       # POST /submissions/run, /submit, GET /submissions/my
 │   │   ├── rankings.py          # GET /rankings, /rankings/:question_id
-│   │   └── admin.py             # GET /admin/submissions
+│   │   └── admin.py             # GET /admin/questions (all incl. drafts), GET /admin/submissions
 │   │
 │   ├── services/                # Business logic (decoupled from HTTP layer)
 │   │   ├── auth_service.py      # password hashing, JWT create/verify
@@ -527,7 +528,8 @@ code-compiler-backend/
 │   └── dependencies.py          # get_db, get_current_user, require_admin
 │
 ├── docker-compose.yml           # Piston engine + backend service
-├── requirements.txt
+├── requirements.txt             # fastapi, uvicorn, sqlalchemy, python-jose[cryptography],
+│                                # passlib[bcrypt], httpx, pydantic-settings, python-multipart
 └── .env                         # SECRET_KEY, ADMIN_EMAIL, ADMIN_PASSWORD, PISTON_URL
 ```
 
@@ -564,3 +566,6 @@ PISTON_URL=http://localhost:2000
 - Memory limit: 64MB per execution
 - API response time (non-execution): < 200ms
 - JWT tokens expire after 24 hours
+- Backend runs on port **8000** (`uvicorn app.main:app --port 8000`)
+- Frontend dev server runs on port **5173** (Vite default)
+- CORS allows `http://localhost:5173` in development
