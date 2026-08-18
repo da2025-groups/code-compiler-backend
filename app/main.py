@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.database import engine, Base, SessionLocal
+import app.database as _db
 from app.seed import seed_admin
 from app.routers import auth, playground, questions, submissions, rankings, admin
 
@@ -10,8 +10,9 @@ from app.routers import auth, playground, questions, submissions, rankings, admi
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: create all tables then seed the admin account
-    Base.metadata.create_all(bind=engine)
-    db = SessionLocal()
+    # Uses module-reference lookup so test fixtures can patch app.database attributes.
+    _db.Base.metadata.create_all(bind=_db.engine)
+    db = _db.SessionLocal()
     try:
         seed_admin(db)
     finally:
