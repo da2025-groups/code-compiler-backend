@@ -47,10 +47,16 @@ async def execute_code(
     """
     url = f"{_config.settings.piston_url}/api/v2/execute"
     run_timeout = _LANGUAGE_RUN_TIMEOUT_MS.get(language, _RUN_TIMEOUT_MS)
+    # gcc runtime uses the file extension to pick gcc vs g++.
+    # Without a name Piston defaults to "file0.code.c" → compiled as C (no iostream).
+    # Force .cpp so Piston invokes g++ for all C++ submissions.
+    file_entry: dict = {"content": code}
+    if language == "gcc":
+        file_entry["name"] = "main.cpp"
     payload = {
         "language": language,
         "version": version,
-        "files": [{"content": code}],
+        "files": [file_entry],
         "stdin": stdin,
         "run_timeout": run_timeout,
         "compile_timeout": _COMPILE_TIMEOUT_MS,

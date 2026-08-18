@@ -42,6 +42,22 @@ async def test_execute_code_sends_correct_payload():
     assert result["run"]["stdout"] == "hello\n"
 
 
+async def test_execute_code_gcc_sends_cpp_filename():
+    """gcc language submissions include name=main.cpp so Piston invokes g++."""
+    from app.services.piston_service import execute_code
+
+    client = AsyncMock()
+    client.post.return_value = _mock_response({"run": {"stdout": "", "stderr": "", "code": 0}})
+
+    await execute_code("gcc", "*", "#include <iostream>", client=client)
+
+    _, kwargs = client.post.call_args
+    file_entry = kwargs["json"]["files"][0]
+    assert file_entry.get("name") == "main.cpp", (
+        "gcc submissions must use main.cpp so Piston picks g++ over gcc"
+    )
+
+
 async def test_execute_code_includes_stdin():
     """execute_code passes stdin through to Piston payload."""
     from app.services.piston_service import execute_code
@@ -103,7 +119,7 @@ def test_language_aliases_map_known_names():
     from app.services.piston_service import LANGUAGE_ALIASES
     assert LANGUAGE_ALIASES["python3"] == "python"
     assert LANGUAGE_ALIASES["js"] == "javascript"
-    assert LANGUAGE_ALIASES["cpp"] == "c++"
+    assert LANGUAGE_ALIASES["cpp"] == "gcc"
 
 
 async def test_execute_code_includes_memory_limit():
