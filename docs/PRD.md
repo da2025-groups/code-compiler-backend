@@ -286,7 +286,7 @@ Both modes share the same Piston execution engine and Monaco editor component.
 | Concern | Choice | Reason |
 |---------|--------|--------|
 | Framework | React 18 + Vite | Fast builds, industry standard |
-| Styling | Tailwind CSS + shadcn/ui | Utility-first, accessible primitives |
+| Styling | Material UI (MUI v5) | Rich pre-built components, fast for hackathon |
 | State | Zustand | Lightweight global state, no boilerplate |
 | HTTP | Axios | Interceptors for JWT injection + error handling |
 | Routing | React Router v6 | Declarative, nested routes |
@@ -428,8 +428,8 @@ code-compiler-frontend/
 │   │   ├── languages.js                   # { id, label, monacoLang, pistonRuntime }
 │   │   └── routes.js                      # Route path constants
 │   │
-│   ├── styles/
-│   │   └── index.css                      # Tailwind directives + global overrides
+│   ├── theme/
+│   │   └── index.js                       # MUI theme (palette, typography, component overrides)
 │   │
 │   ├── App.jsx
 │   └── main.jsx
@@ -438,7 +438,6 @@ code-compiler-frontend/
 ├── .env.example
 ├── index.html
 ├── vite.config.js
-├── tailwind.config.js
 └── package.json
 ```
 
@@ -467,12 +466,27 @@ PlaygroundPage
         └── OutputPanel         (same reusable component)
 ```
 
+### MUI Component Mapping
+| UI Need | MUI Component |
+|---------|--------------|
+| Difficulty badge | `<Chip color="success/warning/error">` |
+| Rankings table | `<DataGrid>` |
+| Admin submissions | `<DataGrid>` |
+| Question tabs (Problem / Submissions) | `<Tabs> + <Tab>` |
+| Create question modal | `<Dialog>` |
+| Test case add/remove | `<IconButton>` + `<TextField>` |
+| Loading states | `<CircularProgress>` |
+| Notifications | `<Snackbar> + <Alert>` |
+| Verdict status | `<Alert severity="success/error/warning">` |
+| Navbar | `<AppBar> + <Toolbar>` |
+
 ### Key Design Principles
 - **Pages are thin** — they compose features, never contain business logic
 - **Features are self-contained** — each has its own components, hooks, and API service
 - **`components/`** holds only truly reusable pieces used across 2+ features
 - **Zustand stores** are minimal — only what must be globally shared (auth, editor state)
 - **Axios interceptor** in `services/api.js` auto-attaches JWT to every request
+- **MUI theme** defined once in `src/theme/index.js` — all pages inherit it
 
 ---
 
