@@ -26,7 +26,7 @@ A HackerRank-style competitive coding platform where admins post coding challeng
 
 | Role | Capabilities |
 |------|-------------|
-| **Admin** | Login, create/edit/delete questions, view all submissions, manage users |
+| **Admin** | Login, create/edit/delete questions, view all submissions |
 | **Student** | Register/login, use playground, view published questions, run & submit solutions, view rankings |
 
 ---
@@ -77,6 +77,7 @@ A standalone code editor with no relation to questions, scoring, or leaderboard.
 | Time Limit Exceeded | Execution > 5s | 0 |
 | Compile / Runtime Error | Error in code | 0 |
 
+- Output comparison uses **trimmed whitespace matching**: `actual.strip() == expected.strip()` — prevents false Wrong Answers from trailing newlines or spaces
 - Only the best submission per question per student counts toward ranking
 - Full submission history is always visible to the student
 
@@ -152,6 +153,7 @@ GET  /rankings/:question_id     Per-question leaderboard
 | is_published | BOOLEAN | Visible to students only if true |
 | created_by | INTEGER FK | Admin user id |
 | created_at | DATETIME | Creation time |
+| updated_at | DATETIME | Last edit time (auto-updated on PUT) |
 
 ### submissions
 | Column | Type | Description |
@@ -174,6 +176,7 @@ GET  /rankings/:question_id     Per-question leaderboard
 
 | Route | Role | Description |
 |-------|------|-------------|
+| `/` | Both | Redirect — students → `/questions`, admins → `/admin/questions`, unauthenticated → `/login` |
 | `/login` | Both | Login form |
 | `/register` | Student | Signup form |
 | `/playground` | Student | Free compiler — write, run, see output. No question context. |
@@ -249,24 +252,26 @@ Both modes share the same Piston execution engine and Monaco editor component.
 ## 11. Build Order
 
 ### Backend
-1. Project scaffold (FastAPI + SQLAlchemy + SQLite)
-2. Database models (users, questions, submissions)
-3. Auth routes (register, login, JWT middleware)
-4. Piston integration (execution service)
-5. Playground run endpoint
-6. Questions CRUD (admin routes)
-7. Submissions — run + submit + judge logic
-8. Rankings endpoint
+1. Project scaffold (FastAPI + SQLAlchemy + SQLite + config.py + .env)
+2. Docker Compose — spin up Piston engine, verify it responds
+3. Database models (users, questions, submissions)
+4. Auth routes (register, login, JWT middleware)
+5. Piston integration (piston_service.py — execution wrapper)
+6. Playground run endpoint
+7. Questions CRUD (admin routes)
+8. Submissions — run + submit + judge logic (trimmed whitespace comparison)
+9. Rankings endpoint
 
 ### Frontend
-1. React + Vite scaffold
-2. Login + Register pages
-3. Playground page (Monaco editor + run)
-4. Question list page
-5. Question detail + Monaco editor + run/submit + verdict
-6. Leaderboard page
-7. Admin dashboard (question management)
-8. Admin submissions view
+1. React + Vite scaffold + MUI theme + Axios instance + Zustand stores
+2. Router setup — ProtectedRoute, AdminRoute, root `/` redirect
+3. Login + Register pages
+4. Playground page (Monaco editor + run)
+5. Question list page (with difficulty badges + is_solved indicator)
+6. Question detail + Monaco editor + Run / Submit + verdict + submission history
+7. Leaderboard page
+8. Admin — question list + create + edit pages
+9. Admin submissions view
 
 ---
 
@@ -308,8 +313,7 @@ code-compiler-frontend/
 │   │   │                              # (Button, Input, Chip, Modal, Tabs, etc. all from MUI)
 │   │   │
 │   │   ├── layout/                    # App-wide layout components
-│   │   │   ├── Navbar.jsx             # Top nav with role-aware links
-│   │   │   ├── Sidebar.jsx            # Admin sidebar
+│   │   │   ├── Navbar.jsx             # Top nav with role-aware links (student + admin in one)
 │   │   │   ├── PageWrapper.jsx        # Consistent page padding/max-width
 │   │   │   └── ProtectedLayout.jsx    # Wraps auth-required pages
 │   │   │
@@ -401,8 +405,8 @@ code-compiler-frontend/
 │   │       └── AdminSubmissionsPage.jsx
 │   │
 │   ├── store/                             # GLOBAL STATE (Zustand)
-│   │   ├── authStore.js                   # user, token, role, login/logout
-│   │   └── editorStore.js                 # language, code per question (persisted)
+│   │   ├── authStore.js                   # user, token, role, login/logout — persisted to localStorage
+│   │   └── editorStore.js                 # language + code per question — sessionStorage only (resets on tab close)
 │   │
 │   ├── router/                            # ROUTING
 │   │   ├── index.jsx                      # All route definitions
@@ -492,6 +496,7 @@ code-compiler-backend/
 ├── app/
 │   ├── main.py                  # FastAPI app init, CORS middleware, router registration
 │   ├── database.py              # SQLAlchemy engine, session, Base
+│   ├── config.py                # Pydantic BaseSettings — loads SECRET_KEY, ADMIN_EMAIL, PISTON_URL from .env
 │   ├── seed.py                  # Admin account seeding on startup
 │   │
 │   ├── models/                  # SQLAlchemy ORM models
