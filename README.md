@@ -384,7 +384,14 @@ Per-question leaderboard. Ranked by `best_score` descending, then `execution_tim
 
 ### Admin — requires admin role
 
-Use the credentials from `.env` (`ADMIN_EMAIL` / `ADMIN_PASSWORD`) to log in as admin.
+Use the default admin credentials to log in (set in `.env`):
+
+| Field | Default value |
+|---|---|
+| Email | `admin@platform.com` |
+| Password | `admin123` |
+
+> Change these in `.env` before deploying to production.
 
 #### `GET /admin/questions`
 List **all** questions including unpublished drafts.
