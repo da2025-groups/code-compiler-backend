@@ -7,10 +7,17 @@ def client():
     """TestClient with in-memory DB, bypassing real .env seeding."""
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.pool import StaticPool
     from app.database import Base
     from app.models import user, question, submission  # noqa
 
-    test_engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    # StaticPool forces all threads to share one SQLite connection so the worker
+    # thread processing ASGI requests sees the same in-memory DB as the fixture thread.
+    test_engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
     Base.metadata.create_all(bind=test_engine)
     TestSession = sessionmaker(bind=test_engine)
 
