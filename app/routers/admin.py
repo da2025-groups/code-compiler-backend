@@ -38,3 +38,13 @@ def admin_update_question(
     if result is None:
         raise HTTPException(status_code=404, detail="Question not found")
     return result
+
+
+@router.get("/submissions")
+def admin_submissions(
+    db: Session = Depends(get_db),
+    current_user=Depends(require_admin),
+):
+    """Return all submissions with user name and question title."""
+    from app.services import judge_service
+    return judge_service.get_all_submissions(db)
