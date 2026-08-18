@@ -1,7 +1,7 @@
 # Product Requirements Document
 ## Multi-language Code Compiler & Evaluation Platform
 
-**Version:** 1.0  
+**Version:** 1.4  
 **Date:** 2026-08-18  
 **Project:** #10 — Dr. Dhawaleswar Rao, SoET/CSE  
 
@@ -113,8 +113,13 @@ GET    /admin/questions          [Admin] List ALL questions including unpublishe
 
 ### Submissions
 ```
-POST  /submissions/run                        Run against sample input (no score saved)
-POST  /submissions/submit                     Judge against all test cases (score saved)
+POST  /submissions/run                        Run against question's sample_input (no score saved)
+                                              Body: { question_id, language, code }
+                                              Backend fetches sample_input from DB and executes
+
+POST  /submissions/submit                     Judge against all hidden test cases (score saved)
+                                              Body: { question_id, language, code }
+
 GET   /submissions/my                         Student's own full submission history
 GET   /submissions/my?question_id=:id         Student's submissions for a specific question
 GET   /admin/submissions                      [Admin] All submissions across all users
@@ -123,7 +128,12 @@ GET   /admin/submissions                      [Admin] All submissions across all
 ### Rankings
 ```
 GET  /rankings                  Global leaderboard
+                                Response: [{ rank, user_id, name, solved_count, total_score }]
+                                sorted by solved_count DESC, total_score DESC
+
 GET  /rankings/:question_id     Per-question leaderboard
+                                Response: [{ rank, user_id, name, best_score, execution_time_ms }]
+                                sorted by best_score DESC, execution_time_ms ASC
 ```
 
 ---
@@ -180,7 +190,7 @@ GET  /rankings/:question_id     Per-question leaderboard
 | `/` | Both | Redirect — students → `/questions`, admins → `/admin/questions`, unauthenticated → `/login` |
 | `/login` | Both | Login form |
 | `/register` | Student | Signup form |
-| `/playground` | Student | Free compiler — write, run, see output. No question context. |
+| `/playground` | Both | Free compiler — write, run, see output. No question context. |
 | `/questions` | Student | Contest question list with difficulty badges |
 | `/questions/:id` | Student | Problem statement + Monaco editor + Run / Submit + verdict |
 | `/leaderboard` | Both | Global rankings table |
@@ -390,7 +400,7 @@ code-compiler-frontend/
 │   │       │   ├── useAdminQuestions.js
 │   │       │   └── useAdminSubmissions.js
 │   │       └── services/
-│   │           └── adminApi.js            # POST/PUT/DELETE /questions, GET /admin/submissions
+│   │           └── adminApi.js            # GET/POST/PUT/DELETE /questions, GET /admin/questions, GET /admin/submissions
 │   │
 │   ├── pages/                             # ROUTE-LEVEL PAGES (thin wrappers only)
 │   │   ├── LoginPage.jsx
