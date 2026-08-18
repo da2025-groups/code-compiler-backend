@@ -105,12 +105,14 @@ POST  /auth/login           Get JWT token (admin + student)
 ```
 POST  /playground/run       Run code with custom stdin — stateless, no score
                             Body: { language, code, stdin }
+                            Response: { stdout, stderr, execution_time_ms, status }
 ```
 
 ### Questions
 ```
 GET    /questions                List published questions — includes is_solved flag per authenticated student
 GET    /questions/:id            Question detail + sample I/O
+                                 Note: test_cases field is NEVER returned — hidden from students
 POST   /questions                [Admin] Create question with test cases
 PUT    /questions/:id            [Admin] Edit question
 DELETE /questions/:id            [Admin] Delete question
@@ -122,14 +124,17 @@ GET    /admin/questions          [Admin] List ALL questions including unpublishe
 POST  /submissions/run                        Run against question's sample_input (no score saved)
                                               Body: { question_id, language, code }
                                               Backend fetches sample_input from DB and executes
+                                              Response: { stdout, stderr, execution_time_ms, status }
 
 POST  /submissions/submit                     Judge against all hidden test cases (score saved)
                                               Body: { question_id, language, code }
                                               Response: { status, score, passed_cases, total_cases, results: [{input, expected, actual, verdict}] }
 
 GET   /submissions/my                         Student's own full submission history
-GET   /submissions/my?question_id=:id         Student's submissions for a specific question
+                                              Response: [{ id, question_id, question_title, language, status, score, submitted_at }]
+GET   /submissions/my?question_id=:id         Student's submissions for a specific question (same shape)
 GET   /admin/submissions                      [Admin] All submissions across all users
+                                              Response: [{ id, user_name, question_title, language, status, score, submitted_at }]
 ```
 
 ### Rankings
