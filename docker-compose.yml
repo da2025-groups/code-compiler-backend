@@ -2,6 +2,7 @@ services:
   piston:
     image: ghcr.io/engineer-man/piston
     container_name: piston
+    privileged: true
     ports:
       - "2000:2000"
     volumes:
