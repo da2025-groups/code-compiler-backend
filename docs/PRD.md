@@ -278,7 +278,203 @@ Both modes share the same Piston execution engine and Monaco editor component.
 
 ---
 
-## 13. Non-functional Requirements
+## 13. Frontend Folder Structure
+
+### Tech Stack
+| Concern | Choice | Reason |
+|---------|--------|--------|
+| Framework | React 18 + Vite | Fast builds, industry standard |
+| Styling | Tailwind CSS + shadcn/ui | Utility-first, accessible primitives |
+| State | Zustand | Lightweight global state, no boilerplate |
+| HTTP | Axios | Interceptors for JWT injection + error handling |
+| Routing | React Router v6 | Declarative, nested routes |
+| Code Editor | Monaco Editor (`@monaco-editor/react`) | VS Code engine in browser |
+
+### Folder Structure
+
+```
+code-compiler-frontend/
+├── public/
+├── src/
+│   │
+│   ├── assets/                        # Static assets (images, icons, fonts)
+│   │
+│   ├── components/                    # REUSABLE COMPONENTS (shared across features)
+│   │   ├── ui/                        # Primitive UI building blocks
+│   │   │   ├── Button.jsx
+│   │   │   ├── Input.jsx
+│   │   │   ├── Badge.jsx              # Difficulty badge (Easy/Medium/Hard)
+│   │   │   ├── Modal.jsx
+│   │   │   ├── Spinner.jsx
+│   │   │   ├── Toast.jsx
+│   │   │   ├── Table.jsx
+│   │   │   ├── Tabs.jsx
+│   │   │   └── Select.jsx
+│   │   │
+│   │   ├── layout/                    # App-wide layout components
+│   │   │   ├── Navbar.jsx             # Top nav with role-aware links
+│   │   │   ├── Sidebar.jsx            # Admin sidebar
+│   │   │   ├── PageWrapper.jsx        # Consistent page padding/max-width
+│   │   │   └── ProtectedLayout.jsx    # Wraps auth-required pages
+│   │   │
+│   │   └── common/                    # Shared composite components
+│   │       ├── CodeEditor.jsx         # Monaco Editor wrapper (reused in Playground + Contest)
+│   │       ├── LanguageSelector.jsx   # Dropdown for Python/C++/Java/JS
+│   │       ├── OutputPanel.jsx        # stdout/stderr display panel
+│   │       ├── VerdictBadge.jsx       # Accepted / WA / TLE status chip
+│   │       └── EmptyState.jsx         # Empty list placeholder
+│   │
+│   ├── features/                      # FEATURE MODULES (co-located logic)
+│   │   │
+│   │   ├── auth/
+│   │   │   ├── components/
+│   │   │   │   ├── LoginForm.jsx
+│   │   │   │   └── RegisterForm.jsx
+│   │   │   ├── hooks/
+│   │   │   │   └── useAuth.js         # login, logout, register actions
+│   │   │   └── services/
+│   │   │       └── authApi.js         # POST /auth/login, /auth/register
+│   │   │
+│   │   ├── playground/
+│   │   │   ├── components/
+│   │   │   │   ├── PlaygroundEditor.jsx   # CodeEditor + LanguageSelector + StdinInput
+│   │   │   │   └── StdinInput.jsx         # Textarea for custom input
+│   │   │   ├── hooks/
+│   │   │   │   └── usePlayground.js       # run code, manage state
+│   │   │   └── services/
+│   │   │       └── playgroundApi.js       # POST /playground/run
+│   │   │
+│   │   ├── questions/
+│   │   │   ├── components/
+│   │   │   │   ├── QuestionList.jsx       # Grid/list of published questions
+│   │   │   │   ├── QuestionCard.jsx       # Title, difficulty badge, solved status
+│   │   │   │   ├── QuestionDetail.jsx     # Full problem statement + constraints
+│   │   │   │   └── SampleIO.jsx           # Sample input/output display block
+│   │   │   ├── hooks/
+│   │   │   │   ├── useQuestions.js        # fetch question list
+│   │   │   │   └── useQuestion.js         # fetch single question by id
+│   │   │   └── services/
+│   │   │       └── questionsApi.js        # GET /questions, GET /questions/:id
+│   │   │
+│   │   ├── editor/                        # Contest code editor + submission logic
+│   │   │   ├── components/
+│   │   │   │   ├── ContestEditor.jsx      # CodeEditor + Run + Submit buttons
+│   │   │   │   ├── RunResult.jsx          # Output after Run (stdout/stderr)
+│   │   │   │   ├── VerdictPanel.jsx       # Submit result: score, per-case breakdown
+│   │   │   │   ├── TestCaseRow.jsx        # Single test case result row
+│   │   │   │   └── SubmissionHistory.jsx  # Student's past submissions for this question
+│   │   │   ├── hooks/
+│   │   │   │   ├── useRun.js              # POST /submissions/run
+│   │   │   │   └── useSubmit.js           # POST /submissions/submit
+│   │   │   └── services/
+│   │   │       └── submissionsApi.js      # run + submit API calls
+│   │   │
+│   │   ├── leaderboard/
+│   │   │   ├── components/
+│   │   │   │   ├── LeaderboardTable.jsx   # Full rankings table
+│   │   │   │   ├── RankCell.jsx           # Rank number with medal for top 3
+│   │   │   │   └── ScoreCell.jsx          # Score with progress bar
+│   │   │   ├── hooks/
+│   │   │   │   └── useLeaderboard.js      # GET /rankings
+│   │   │   └── services/
+│   │   │       └── rankingsApi.js
+│   │   │
+│   │   └── admin/
+│   │       ├── components/
+│   │       │   ├── QuestionForm.jsx        # Create/edit question form
+│   │       │   ├── TestCaseEditor.jsx      # Add/remove hidden test cases
+│   │       │   ├── AdminQuestionRow.jsx    # Single row in admin question table
+│   │       │   └── AdminSubmissionsTable.jsx  # All submissions view
+│   │       ├── hooks/
+│   │       │   ├── useAdminQuestions.js
+│   │       │   └── useAdminSubmissions.js
+│   │       └── services/
+│   │           └── adminApi.js            # POST/PUT/DELETE /questions, GET /admin/submissions
+│   │
+│   ├── pages/                             # ROUTE-LEVEL PAGES (thin wrappers only)
+│   │   ├── LoginPage.jsx
+│   │   ├── RegisterPage.jsx
+│   │   ├── PlaygroundPage.jsx
+│   │   ├── QuestionsPage.jsx
+│   │   ├── QuestionDetailPage.jsx         # Composes QuestionDetail + ContestEditor
+│   │   ├── LeaderboardPage.jsx
+│   │   └── admin/
+│   │       ├── AdminQuestionsPage.jsx
+│   │       ├── AdminQuestionNewPage.jsx
+│   │       └── AdminSubmissionsPage.jsx
+│   │
+│   ├── store/                             # GLOBAL STATE (Zustand)
+│   │   ├── authStore.js                   # user, token, role, login/logout
+│   │   └── editorStore.js                 # language, code per question (persisted)
+│   │
+│   ├── router/                            # ROUTING
+│   │   ├── index.jsx                      # All route definitions
+│   │   ├── ProtectedRoute.jsx             # Redirect to /login if not authed
+│   │   └── AdminRoute.jsx                 # Redirect if not admin role
+│   │
+│   ├── services/                          # HTTP CLIENT
+│   │   └── api.js                         # Axios instance — baseURL + JWT interceptor
+│   │
+│   ├── hooks/                             # GLOBAL HOOKS
+│   │   └── useToast.js                    # App-wide toast notifications
+│   │
+│   ├── utils/                             # PURE UTILITIES
+│   │   ├── formatters.js                  # formatDate, formatScore, formatDuration
+│   │   └── validators.js                  # Form validation helpers
+│   │
+│   ├── constants/                         # APP CONSTANTS
+│   │   ├── languages.js                   # { id, label, monacoLang, pistonRuntime }
+│   │   └── routes.js                      # Route path constants
+│   │
+│   ├── styles/
+│   │   └── index.css                      # Tailwind directives + global overrides
+│   │
+│   ├── App.jsx
+│   └── main.jsx
+│
+├── .env                                   # VITE_API_BASE_URL
+├── .env.example
+├── index.html
+├── vite.config.js
+├── tailwind.config.js
+└── package.json
+```
+
+### Component Hierarchy (key pages)
+
+```
+QuestionDetailPage
+├── PageWrapper
+│   ├── QuestionDetail          (left panel)
+│   │   ├── SampleIO
+│   │   └── Badge (difficulty)
+│   └── ContestEditor           (right panel)
+│       ├── LanguageSelector    (reusable/common)
+│       ├── CodeEditor          (reusable/common)
+│       ├── RunResult
+│       ├── VerdictPanel
+│       │   └── TestCaseRow[]
+│       └── SubmissionHistory
+
+PlaygroundPage
+└── PageWrapper
+    └── PlaygroundEditor
+        ├── LanguageSelector    (same reusable component)
+        ├── CodeEditor          (same reusable component)
+        ├── StdinInput
+        └── OutputPanel         (same reusable component)
+```
+
+### Key Design Principles
+- **Pages are thin** — they compose features, never contain business logic
+- **Features are self-contained** — each has its own components, hooks, and API service
+- **`components/`** holds only truly reusable pieces used across 2+ features
+- **Zustand stores** are minimal — only what must be globally shared (auth, editor state)
+- **Axios interceptor** in `services/api.js` auto-attaches JWT to every request
+
+---
+
+## 14. Non-functional Requirements
 - Code execution isolated per submission (no cross-contamination)
 - Execution timeout: 5 seconds
 - Memory limit: 64MB per execution
