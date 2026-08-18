@@ -94,3 +94,103 @@ async def test_get_runtimes_raises_on_error():
 
     with pytest.raises(httpx.HTTPStatusError):
         await get_runtimes(client=client)
+
+
+# ── D2: language aliases + enhanced payload ───────────────────────────────────
+
+def test_language_aliases_map_known_names():
+    """LANGUAGE_ALIASES maps common shorthand to Piston runtime names."""
+    from app.services.piston_service import LANGUAGE_ALIASES
+    assert LANGUAGE_ALIASES["python3"] == "python"
+    assert LANGUAGE_ALIASES["js"] == "javascript"
+    assert LANGUAGE_ALIASES["cpp"] == "c++"
+
+
+async def test_execute_code_includes_memory_limit():
+    """execute_code sends memory_limit in the Piston payload."""
+    from app.services.piston_service import execute_code
+
+    client = AsyncMock()
+    client.post.return_value = _mock_response({"run": {"stdout": "", "stderr": "", "code": 0}})
+    await execute_code("python", "*", "", client=client)
+    _, kwargs = client.post.call_args
+    assert "memory_limit" in kwargs["json"]
+
+
+async def test_execute_code_includes_compile_timeout():
+    """execute_code sends compile_timeout in the Piston payload."""
+    from app.services.piston_service import execute_code
+
+    client = AsyncMock()
+    client.post.return_value = _mock_response({"run": {"stdout": "", "stderr": "", "code": 0}})
+    await execute_code("python", "*", "", client=client)
+    _, kwargs = client.post.call_args
+    assert "compile_timeout" in kwargs["json"]
+
+
+# ── D3: run_code + status normalisation ──────────────────────────────────────
+
+async def test_run_code_returns_accepted():
+    """run_code returns status=accepted when exit code is 0 and no signal."""
+    from app.services.piston_service import run_code
+
+    client = AsyncMock()
+    client.post.return_value = _mock_response({
+        "run": {"stdout": "hello\n", "stderr": "", "code": 0, "signal": None}
+    })
+    result = await run_code("python", "print('hello')", client=client)
+    assert result["status"] == "accepted"
+    assert result["stdout"] == "hello\n"
+    assert isinstance(result["execution_time_ms"], int)
+
+
+async def test_run_code_returns_runtime_error():
+    """run_code returns status=runtime_error when exit code is non-zero."""
+    from app.services.piston_service import run_code
+
+    client = AsyncMock()
+    client.post.return_value = _mock_response({
+        "run": {"stdout": "", "stderr": "NameError: x", "code": 1, "signal": None}
+    })
+    result = await run_code("python", "bad code", client=client)
+    assert result["status"] == "runtime_error"
+    assert result["stderr"] == "NameError: x"
+
+
+async def test_run_code_returns_time_limit_exceeded():
+    """run_code returns status=time_limit_exceeded when signal is SIGKILL."""
+    from app.services.piston_service import run_code
+
+    client = AsyncMock()
+    client.post.return_value = _mock_response({
+        "run": {"stdout": "", "stderr": "", "code": -1, "signal": "SIGKILL"}
+    })
+    result = await run_code("python", "while True: pass", client=client)
+    assert result["status"] == "time_limit_exceeded"
+
+
+async def test_run_code_compile_failure_returns_runtime_error():
+    """run_code returns runtime_error and compile stderr when compile step fails."""
+    from app.services.piston_service import run_code
+
+    client = AsyncMock()
+    client.post.return_value = _mock_response({
+        "compile": {"stdout": "", "stderr": "error: undeclared identifier", "code": 1, "signal": None},
+        "run": {"stdout": "", "stderr": "", "code": 0, "signal": None},
+    })
+    result = await run_code("c++", "bad code", client=client)
+    assert result["status"] == "runtime_error"
+    assert "undeclared" in result["stderr"]
+
+
+async def test_run_code_resolves_language_alias():
+    """run_code resolves alias before sending to Piston (python3 → python)."""
+    from app.services.piston_service import run_code
+
+    client = AsyncMock()
+    client.post.return_value = _mock_response({
+        "run": {"stdout": "", "stderr": "", "code": 0, "signal": None}
+    })
+    await run_code("python3", "pass", client=client)
+    _, kwargs = client.post.call_args
+    assert kwargs["json"]["language"] == "python"
