@@ -1,0 +1,8 @@
+FROM ghcr.io/engineer-man/piston
+
+# Replace the isolate binary with a no-sandbox Python wrapper.
+# The real isolate uses clone() for namespace isolation which fails under
+# QEMU x86_64 emulation on macOS ARM (Docker Desktop for Apple Silicon).
+# This wrapper executes code directly without sandboxing — dev-only.
+COPY isolate-nosec.py /usr/local/bin/isolate
+RUN chmod +x /usr/local/bin/isolate

@@ -3,8 +3,8 @@ import httpx
 import app.config as _config
 
 _TIMEOUT = 15.0
-_RUN_TIMEOUT_MS = 10_000
-_COMPILE_TIMEOUT_MS = 10_000
+_RUN_TIMEOUT_MS = 3_000      # Piston default max is 3000ms
+_COMPILE_TIMEOUT_MS = 3_000  # Piston default max is 3000ms
 _MEMORY_LIMIT_BYTES = 128 * 1024 * 1024  # 128 MB
 
 LANGUAGE_ALIASES: dict[str, str] = {

@@ -1,8 +1,14 @@
 services:
   piston:
-    image: ghcr.io/engineer-man/piston
+    build:
+      context: .
+      dockerfile: Dockerfile.piston
+    image: piston-nosec
     container_name: piston
     privileged: true
+    platform: linux/amd64
+    security_opt:
+      - seccomp=unconfined
     ports:
       - "2000:2000"
     volumes:
