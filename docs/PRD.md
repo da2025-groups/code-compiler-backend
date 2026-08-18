@@ -26,7 +26,7 @@ A HackerRank-style competitive coding platform where admins post coding challeng
 
 | Role | Capabilities |
 |------|-------------|
-| **Admin** | Login, create/edit/delete questions, view all submissions |
+| **Admin** | Login, use playground, create/edit/delete questions, view all submissions |
 | **Student** | Register/login, use playground, view published questions, run & submit solutions, view rankings |
 
 ---
@@ -93,12 +93,18 @@ A standalone code editor with no relation to questions, scoring, or leaderboard.
 ### Auth
 ```
 POST  /auth/register        Student signup
+                            Body: { name, email, password }
+                            Response: { message: "registered successfully" }
+
 POST  /auth/login           Get JWT token (admin + student)
+                            Body: { email, password }
+                            Response: { access_token, token_type: "bearer", role }
 ```
 
 ### Playground
 ```
 POST  /playground/run       Run code with custom stdin — stateless, no score
+                            Body: { language, code, stdin }
 ```
 
 ### Questions
@@ -119,6 +125,7 @@ POST  /submissions/run                        Run against question's sample_inpu
 
 POST  /submissions/submit                     Judge against all hidden test cases (score saved)
                                               Body: { question_id, language, code }
+                                              Response: { status, score, passed_cases, total_cases, results: [{input, expected, actual, verdict}] }
 
 GET   /submissions/my                         Student's own full submission history
 GET   /submissions/my?question_id=:id         Student's submissions for a specific question
@@ -178,7 +185,7 @@ GET  /rankings/:question_id     Per-question leaderboard
 | passed_cases | INTEGER | Number of test cases passed |
 | total_cases | INTEGER | Total test cases |
 | score | FLOAT | (passed / total) × 100 |
-| execution_time_ms | INTEGER | Total execution time |
+| execution_time_ms | INTEGER | Sum of execution time across all test cases (ms) |
 | submitted_at | DATETIME | Submission timestamp |
 
 ---
