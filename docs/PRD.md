@@ -111,12 +111,26 @@ POST  /playground/run       Run code with custom stdin — stateless, no score
 ### Questions
 ```
 GET    /questions                List published questions — includes is_solved flag per authenticated student
+                                 Response: [{ id, title, difficulty, is_solved, created_at }]
+
 GET    /questions/:id            Question detail + sample I/O
+                                 Response: { id, title, description, difficulty, constraints,
+                                             sample_input, sample_output, created_at }
                                  Note: test_cases field is NEVER returned — hidden from students
+
 POST   /questions                [Admin] Create question with test cases
+                                 Body: { title, description, difficulty, constraints,
+                                         sample_input, sample_output, test_cases, is_published }
+
 PUT    /questions/:id            [Admin] Edit question
+                                 Body: { title, description, difficulty, constraints,
+                                         sample_input, sample_output, test_cases, is_published }
+
 DELETE /questions/:id            [Admin] Delete question
+                                 Response: { message: "deleted" }
+
 GET    /admin/questions          [Admin] List ALL questions including unpublished drafts
+                                 Response: [{ id, title, difficulty, is_published, created_at, updated_at }]
 ```
 
 ### Submissions
@@ -507,7 +521,7 @@ PlaygroundPage
 - **Features are self-contained** — each has its own components, hooks, and API service
 - **`components/`** holds only truly reusable pieces used across 2+ features
 - **Zustand stores** are minimal — only what must be globally shared (auth, editor state)
-- **Axios interceptor** in `services/api.js` auto-attaches JWT to every request
+- **Axios interceptor** in `services/api.js` auto-attaches JWT to every request and redirects to `/login` on 401 (token expired)
 - **MUI theme** defined once in `src/theme/index.js` — all pages inherit it
 
 ---
