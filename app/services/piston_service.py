@@ -1,20 +1,34 @@
 import time
 import httpx
+from fastapi import HTTPException
 import app.config as _config
 
-_TIMEOUT = 15.0
-_RUN_TIMEOUT_MS = 3_000      # Piston default max is 3000ms
-_COMPILE_TIMEOUT_MS = 3_000  # Piston default max is 3000ms
+_TIMEOUT = 30.0
+_RUN_TIMEOUT_MS = 5_000
+_COMPILE_TIMEOUT_MS = 10_000
 _MEMORY_LIMIT_BYTES = 128 * 1024 * 1024  # 128 MB
 
+# Piston language name as registered in its runtime index
 LANGUAGE_ALIASES: dict[str, str] = {
     "python3":     "python",
     "py":          "python",
     "js":          "javascript",
     "node":        "javascript",
     "nodejs":      "javascript",
-    "cpp":         "c++",
-    "c_plus_plus": "c++",
+    "cpp":         "gcc",
+    "c++":         "gcc",
+    "c_plus_plus": "gcc",
+    "c":           "gcc",
+}
+
+# Languages that need extra wall-time (e.g. JVM startup overhead)
+_LANGUAGE_RUN_TIMEOUT_MS: dict[str, int] = {
+    "java":   10_000,
+    "kotlin": 10_000,
+    "scala":  10_000,
+    "groovy": 10_000,
+    "gcc":     8_000,
+    "rust":    8_000,
 }
 
 
@@ -29,14 +43,16 @@ async def execute_code(
     """POST /api/v2/execute and return the full Piston response dict.
 
     Pass ``client`` in tests to inject a mock; production callers leave it None.
+    Raises HTTPException(422) when the language/version is not installed.
     """
     url = f"{_config.settings.piston_url}/api/v2/execute"
+    run_timeout = _LANGUAGE_RUN_TIMEOUT_MS.get(language, _RUN_TIMEOUT_MS)
     payload = {
         "language": language,
         "version": version,
         "files": [{"content": code}],
         "stdin": stdin,
-        "run_timeout": _RUN_TIMEOUT_MS,
+        "run_timeout": run_timeout,
         "compile_timeout": _COMPILE_TIMEOUT_MS,
         "memory_limit": _MEMORY_LIMIT_BYTES,
     }
@@ -45,6 +61,9 @@ async def execute_code(
     else:
         async with httpx.AsyncClient(timeout=_TIMEOUT) as c:
             resp = await c.post(url, json=payload)
+    if resp.status_code == 400:
+        detail = resp.json().get("message", "Unknown language or version")
+        raise HTTPException(status_code=422, detail=detail)
     resp.raise_for_status()
     return resp.json()
 

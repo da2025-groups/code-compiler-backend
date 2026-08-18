@@ -11,6 +11,10 @@ services:
       - seccomp=unconfined
     ports:
       - "2000:2000"
+    environment:
+      # Raise Piston's per-request timeout ceiling so JVM languages have room
+      - PISTON_RUN_TIMEOUT=12000
+      - PISTON_COMPILE_TIMEOUT=12000
     volumes:
       - piston_data:/piston
     restart: unless-stopped

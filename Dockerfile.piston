@@ -1,8 +1,12 @@
 FROM ghcr.io/engineer-man/piston
 
-# Replace the isolate binary with a no-sandbox Python wrapper.
-# The real isolate uses clone() for namespace isolation which fails under
-# QEMU x86_64 emulation on macOS ARM (Docker Desktop for Apple Silicon).
-# This wrapper executes code directly without sandboxing — dev-only.
+# Replace isolate with a no-sandbox wrapper.
+# Linux clone() namespaces fail under QEMU x86_64 on macOS ARM.
 COPY isolate-nosec.py /usr/local/bin/isolate
 RUN chmod +x /usr/local/bin/isolate
+
+# Custom entrypoint: starts piston then auto-installs required runtimes.
+COPY scripts/piston-entrypoint.sh /piston-entrypoint.sh
+RUN chmod +x /piston-entrypoint.sh
+
+ENTRYPOINT ["/piston-entrypoint.sh"]
