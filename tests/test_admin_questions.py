@@ -68,6 +68,34 @@ _Q_BODY = {
 }
 
 
+# ── GET /admin/questions/:id ──────────────────────────────────────────────────
+
+def test_admin_get_question_returns_full_detail(client):
+    """Admin GET by id returns test_cases and unpublished fields."""
+    token = _admin_token(client)
+    create_resp = client.post("/admin/questions", json=_Q_BODY,
+                              headers={"Authorization": f"Bearer {token}"})
+    q_id = create_resp.json()["id"]
+
+    resp = client.get(f"/admin/questions/{q_id}",
+                      headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["id"] == q_id
+    assert data["title"] == "Two Sum"
+    assert "test_cases" in data          # hidden from students, visible to admin
+    assert "is_published" in data
+
+
+def test_admin_get_question_returns_404_for_unknown(client):
+    """GET /admin/questions/999 returns 404."""
+    token = _admin_token(client)
+    resp = client.get("/admin/questions/999",
+                      headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 404
+    assert resp.json()["detail"] == "Question not found"
+
+
 # ── POST /admin/questions ─────────────────────────────────────────────────────
 
 def test_admin_create_question_returns_201(client):

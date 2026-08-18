@@ -57,6 +57,27 @@ def get_published_question(db: Session, question_id: int) -> dict | None:
     }
 
 
+def get_question_admin(db: Session, question_id: int) -> dict | None:
+    """Return full question detail including test_cases for admin. None if not found."""
+    q = db.get(Question, question_id)
+    if q is None:
+        return None
+    return {
+        "id": q.id,
+        "title": q.title,
+        "description": q.description,
+        "difficulty": q.difficulty,
+        "constraints": q.constraints,
+        "sample_input": q.sample_input,
+        "sample_output": q.sample_output,
+        "test_cases": q.test_cases,
+        "is_published": q.is_published,
+        "created_by": q.created_by,
+        "created_at": _dt(q.created_at),
+        "updated_at": _dt(q.updated_at),
+    }
+
+
 def create_question(db: Session, req: QuestionCreate, created_by: int) -> dict:
     _assert_difficulty(req.difficulty)
     q = Question(

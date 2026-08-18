@@ -16,6 +16,19 @@ def admin_list_questions(
     return question_service.list_all_questions(db)
 
 
+@router.get("/questions/{question_id}")
+def admin_get_question(
+    question_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_admin),
+):
+    """Get full detail of any question (including unpublished and test_cases). Returns 404 if not found."""
+    result = question_service.get_question_admin(db, question_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Question not found")
+    return result
+
+
 @router.post("/questions", status_code=201)
 def admin_create_question(
     req: QuestionCreate,
