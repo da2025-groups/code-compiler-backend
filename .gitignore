@@ -1,0 +1,77 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+__pycache__/*
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Test and coverage output
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+test-results
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Logs and runtime files
+*.log
+logs/
+*.pid
+*.sock
+
+# Node
+node_modules/
+**/node_modules/
+.turbo/
+**/.turbo/
+*.tsbuildinfo
+
+# Expo
+.expo/
+apps/mobile/.expo/
+
+# GraphQL codegen output (keep the directory, ignore contents)
+packages/graphql/src/generated/*
+!packages/graphql/src/generated/.gitkeep
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# IDE and OS files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Docker/local generated data
+docker-compose.override.yml
+postgres-data/
+redis-data/
+
+# AI
+.claude
+.mcp.json
+mcp.json
+.serena
+skills/
+.plans/
+.playwright-mcp/
