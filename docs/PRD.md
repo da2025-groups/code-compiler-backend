@@ -36,8 +36,10 @@ A HackerRank-style competitive coding platform where admins post coding challeng
 ### 4.1 Authentication
 - Student self-registration (name, email, password)
 - Admin account seeded at application startup
-- JWT-based sessions (email + password)
+- JWT-based sessions (email + password) — no OAuth, no third-party providers
+- Access token returned on login, stored in `localStorage` on the frontend
 - Role-based route protection (admin vs student)
+- All protected routes require `Authorization: Bearer <token>` header
 
 ### 4.2 Playground (Free Compiler)
 A standalone code editor with no relation to questions, scoring, or leaderboard.
