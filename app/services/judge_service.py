@@ -45,7 +45,7 @@ async def judge_submission(
 
     for case in test_cases:
         stdin = case.get("input", "")
-        expected = case.get("output", "")
+        expected = case.get("expected_output", case.get("output", ""))
         result = await piston_service.run_code(language, code, stdin=stdin, client=client)
         actual = result["stdout"]
         verdict = (
